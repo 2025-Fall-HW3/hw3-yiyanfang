@@ -62,7 +62,10 @@ class EqualWeightPortfolio:
         """
         TODO: Complete Task 1 Below
         """
-
+        n_assets = len(assets)
+        weight = 1.0 / n_assets
+        
+        self.portfolio_weights[assets] = weight
         """
         TODO: Complete Task 1 Above
         """
@@ -104,22 +107,19 @@ class RiskParityPortfolio:
         self.lookback = lookback
 
     def calculate_weights(self):
-        # Get the assets by excluding the specified column
+
         assets = df.columns[df.columns != self.exclude]
 
-        # Calculate the portfolio weights
         self.portfolio_weights = pd.DataFrame(index=df.index, columns=df.columns)
 
-        """
-        TODO: Complete Task 2 Below
-        """
+        rolling_vol = df_returns[assets].rolling(window=self.lookback).std()
+
+        inverse_vol = 1 / rolling_vol
+
+        rolling_weights = inverse_vol.div(inverse_vol.sum(axis=1), axis=0)
 
 
-
-        """
-        TODO: Complete Task 2 Above
-        """
-
+        self.portfolio_weights[assets] = rolling_weights
         self.portfolio_weights.ffill(inplace=True)
         self.portfolio_weights.fillna(0, inplace=True)
 
@@ -188,10 +188,18 @@ class MeanVariancePortfolio:
                 TODO: Complete Task 3 Below
                 """
 
-                # Sample Code: Initialize Decision w and the Objective
-                # NOTE: You can modify the following code
-                w = model.addMVar(n, name="w", ub=1)
-                model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
+                """
+                TODO: Complete Task 3 Below
+                """
+                w = model.addMVar(n, name="w", lb=0.0, ub=1.0)
+
+                portfolio_return = w @ mu
+                portfolio_risk = w @ Sigma @ w
+                objective = portfolio_return - 0.5 * gamma * portfolio_risk
+                
+                model.setObjective(objective, gp.GRB.MAXIMIZE)
+                model.addConstr(w.sum() == 1, name="budget")
+
 
                 """
                 TODO: Complete Task 3 Above
